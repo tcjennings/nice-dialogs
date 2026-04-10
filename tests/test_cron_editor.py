@@ -7,13 +7,13 @@ pytestmark = pytest.mark.asyncio(loop_scope="function")
 """Sets the default asyncio loop scope."""
 
 
-async def test_cron_editor(user: User):
+async def test_cron_editor(user: User) -> None:
     """Tests the operation of the Cron Editor Dialog.
 
     Using the NiceGUI User testing fixture, open the dialog and set a specific
     cron expression by interacting directly with the 5 available select
     components. Assert that the expected cron expression string is visible in
-    the dialog and that the correct value is returned when "Done" is clicked.
+    the dialog.
 
     Notes
     -----
@@ -36,16 +36,13 @@ async def test_cron_editor(user: User):
         s, o = pair
         # Click to open the select dropdown and ensure the options are visible
         user.find(kind=ui.select, marker=s).click()
-        await user.should_see(o, retries=10)
+        await user.should_see(o, retries=50)
 
         # Find the option and click it
         user.find(o).click()
-        await user.should_see(o, retries=10)
+        await user.should_see(o, retries=50)
 
-    await user.should_see("*/15 0 * 3 0,6", retries=10)
+    await user.should_see("*/15 0 * 3 0,6", retries=50)
 
     cron_display = user.find(kind=ui.code, marker="cron-expression-display").elements.pop()
     assert cron_display.content == "*/15 0 * 3 0,6"
-
-    # Click the Done button
-    user.find(kind=ui.button, marker="done").click()

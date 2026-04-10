@@ -10,6 +10,6 @@ def monkeypatch_session() -> Generator[pytest.MonkeyPatch]:
 
 
 @pytest.fixture(scope='session', autouse=True)
-def setup_nicegui_env(monkeypatch_session: pytest.MonkeyPatch):
+def setup_nicegui_env(monkeypatch_session: pytest.MonkeyPatch) -> None:
     """Set up environment before NiceGUI test app loads"""
     monkeypatch_session.setenv("NATIVE", "0")
