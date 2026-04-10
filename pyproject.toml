@@ -17,6 +17,8 @@ dev = [
     "ruff",
     "mypy",
     "pytest >= 9",
+    "pytest-asyncio",
+    "pytest-cov",
     "pywebview",
 ]
 
@@ -33,3 +35,9 @@ fallback-version = "0.0.0"
 
 [tool.mypy]
 strict = true
+
+[tool.pytest]
+asyncio_mode = "auto"
+addopts = ["--cov=nice_dialog",  "--cov-fail-under=90", "-p nicegui.testing.user_plugin"]
+testpaths = ["tests"]
+main_file = "examples/main.py"  # NiceGUI Test Plugin

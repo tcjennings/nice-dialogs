@@ -79,11 +79,11 @@ class CronEditorDialog(ui.dialog):
             ui.label(self.dialog_title).classes("font-bold text-3xl")
             with ui.row().classes("flex w-full"):
                 # cron expression display with copy button
-                ui.code(language="cron").classes(
+                ui.code().classes(
                     "text-2xl/8 text-center"
                 ).bind_content_from(
                     target_object=self, target_name="model", backward=lambda x: str(x)
-                ).classes("flex-1")
+                ).classes("flex-1").mark("cron-expression-display")
             with ui.row().classes("flex w-full"):
                 # 5 x dropdown selectors
                 ui.select(
@@ -92,35 +92,35 @@ class CronEditorDialog(ui.dialog):
                     with_input=True,
                     new_value_mode="add-unique",
                     on_change=self.handle_cron_change,
-                ).classes("w-1/6 flex-1").bind_value(self, ("model", "minute"))
+                ).classes("w-1/6 flex-1").bind_value(self, ("model", "minute")).mark("minute")
                 ui.select(
                     HOUR_OPTIONS,
                     label="Hour",
                     with_input=True,
                     new_value_mode="add-unique",
                     on_change=self.handle_cron_change,
-                ).classes("w-1/6 flex-1").bind_value(self, ("model", "hour"))
+                ).classes("w-1/6 flex-1").bind_value(self, ("model", "hour")).mark("hour")
                 ui.select(
                     DAY_OPTIONS,
                     label="Day",
                     with_input=True,
                     new_value_mode="add-unique",
                     on_change=self.handle_cron_change,
-                ).classes("w-1/6 flex-1").bind_value(self, ("model", "dom"))
+                ).classes("w-1/6 flex-1").bind_value(self, ("model", "dom")).mark("dom")
                 ui.select(
                     MONTH_OPTIONS,
                     label="Month",
                     with_input=True,
                     new_value_mode="add-unique",
                     on_change=self.handle_cron_change,
-                ).classes("w-1/6 flex-1").bind_value(self, ("model", "month"))
+                ).classes("w-1/6 flex-1").bind_value(self, ("model", "month")).mark("month")
                 ui.select(
                     WEEKDAY_OPTIONS,
                     label="Weekday",
                     with_input=True,
                     new_value_mode="add-unique",
                     on_change=self.handle_cron_change,
-                ).classes("w-1/6 flex-1").bind_value(self, ("model", "dow"))
+                ).classes("w-1/6 flex-1").bind_value(self, ("model", "dow")).mark("dow")
 
             with ui.column().classes("w-full"):
                 ui.label("Next 5 Runs").classes("text-sm text-gray-400 font-medium")
@@ -128,10 +128,10 @@ class CronEditorDialog(ui.dialog):
 
             with ui.card_actions().classes("w-full align-left"):
                 with ui.row():
-                    ui.button("Done", on_click=lambda: self.submit(str(self.model)))
+                    ui.button("Done", on_click=lambda: self.submit(str(self.model))).mark("done")
                     ui.button(
                         "Cancel", color="negative", on_click=lambda: self.submit(None)
-                    )
+                    ).mark("cancel")
 
     def handle_cron_change(self, e: ValueChangeEventArguments) -> None:
         """Callback handler from cron expression selectors"""

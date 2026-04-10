@@ -12,7 +12,7 @@ import os
 
 from nicegui import ui
 
-from .pages.index import NiceIndexPage
+from examples.pages.index import NiceIndexPage
 
 
 @ui.page("/")
@@ -22,6 +22,5 @@ async def nice_index() -> None:
         await page.render()
 
 
-if __name__ in {"__main__", "__mp_main__"}:
-    native = os.getenv("NATIVE", "1") == "1"
-    ui.run(title="Nice Dialogs", native=native, reload=True)
+native = os.getenv("NATIVE", "1") == "1"
+ui.run(title="Nice Dialogs", native=native, reload=True)
