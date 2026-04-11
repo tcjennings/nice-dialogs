@@ -41,3 +41,30 @@ asyncio_mode = "auto"
 addopts = ["--cov=nice_dialog",  "--cov-fail-under=90", "-p nicegui.testing.user_plugin"]
 testpaths = ["tests"]
 main_file = "examples/main.py"  # NiceGUI Test Plugin
+
+[tool.ruff.lint]
+ignore = [
+    "COM812",
+]
+
+select = [
+    "E",
+    "F",
+    "N",
+    "W",
+    "COM",
+    "FBT",
+    "UP",
+    "ASYNC",
+    "DTZ",
+    "ERA",
+    "PTH",
+    "FAST",
+    "FURB",
+    "PERF",
+    "EM102",
+    "G004",
+    "T20",
+    "LOG",
+    "RUF100",
+]

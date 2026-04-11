@@ -30,4 +30,4 @@ examples:
 
 .PHONY: typing
 typing:
-	uv run mypy -p nice_dialog
+	uv run mypy -p nice_dialog -p examples -p tests
