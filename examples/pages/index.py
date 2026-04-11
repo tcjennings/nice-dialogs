@@ -1,8 +1,16 @@
+from dataclasses import dataclass
 from typing import Self
 
 from nicegui import ui
 
 from nice_dialog.dialogs.cron_editor import CronEditorDialog
+from nice_dialog.dialogs.datetime_picker import DatetimePickerDialog
+
+@dataclass
+class NiceIndexModel:
+    """Data model for the index page."""
+    dt_tz_frozen: bool = False
+    dt_tz_hidden: bool = False
 
 
 class NiceIndexPage:
@@ -23,6 +31,7 @@ class NiceIndexPage:
     """
 
     content: ui.column
+    model: NiceIndexModel
 
     def __init__(self) -> None:
         """Creates the basic layout of the page.
@@ -43,15 +52,26 @@ class NiceIndexPage:
 
     async def show_cron_dialog(self) -> None:
         """Button callback to display and await the result of a cron expression editor dialog."""
-        result = await self.cron_dialog
+        result = await CronEditorDialog()
+        ui.notify(result)
+
+
+    async def show_dt_dialog(self) -> None:
+        """Button callback to display and await the result of a datetime picker dialog."""
+        result = await DatetimePickerDialog(hide_timezone=self.model.dt_tz_hidden, freeze_timezone=self.model.dt_tz_frozen)
         ui.notify(result)
 
     async def setup(self) -> Self:
         """Method for creating page models or other components. This method can also be used to fetch data or perform other asynchronous setup tasks."""
-        self.cron_dialog = CronEditorDialog()
+        self.model = NiceIndexModel()
         return self
 
     async def render(self) -> None:
         """Method for building the UI of the page. This method can use any components created during the `setup` phase."""
         with self.content:
-            ui.button("Cron Expression Editor", on_click=self.show_cron_dialog)
+            with ui.row().classes("w-full justify-start gap-4"):
+                ui.button("Cron Expression Editor", on_click=self.show_cron_dialog)
+            with ui.row().classes("w-full justify-start gap-4"):
+                ui.button("Datetime Picker", on_click=self.show_dt_dialog)
+                ui.switch("Freeze Timezone Input").bind_value(self, ("model", "dt_tz_frozen"))
+                ui.switch("Hide Timezone Input").bind_value(self, ("model", "dt_tz_hidden"))
