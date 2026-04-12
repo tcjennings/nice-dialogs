@@ -13,13 +13,14 @@ dynamic = ["version"]
 
 [dependency-groups]
 dev = [
-    "pre-commit",
-    "ruff",
+    "faker",
     "mypy",
+    "pre-commit",
     "pytest >= 9",
     "pytest-asyncio",
     "pytest-cov",
     "pywebview",
+    "ruff",
 ]
 
 [build-system]

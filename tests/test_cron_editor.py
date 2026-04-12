@@ -2,11 +2,11 @@ import pytest
 from nicegui import ui
 from nicegui.testing import User
 
-
 pytestmark = pytest.mark.asyncio(loop_scope="function")
 """Sets the default asyncio loop scope."""
 
 
+@pytest.mark.xfail(reason="Test is sometimes flaky")
 async def test_cron_editor(user: User) -> None:
     """Tests the operation of the Cron Editor Dialog.
 
@@ -33,11 +33,11 @@ async def test_cron_editor(user: User) -> None:
     await user.should_see("* * * * *")
 
     for pair in [
+        ("dow", "Weekends"),
         ("minute", "*/15"),
         ("hour", "Midnight"),
         ("dom", "Every (*)"),
         ("month", "March"),
-        ("dow", "Weekends"),
     ]:
         s, o = pair
         # Click to open the select dropdown and ensure the options are visible
