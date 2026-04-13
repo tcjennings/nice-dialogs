@@ -1,6 +1,6 @@
 from collections.abc import Generator
 from dataclasses import dataclass, field
-from datetime import date, time, datetime, tzinfo, UTC
+from datetime import UTC, date, datetime, time, tzinfo
 from enum import IntFlag, auto
 from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -136,7 +136,11 @@ class DatetimePickerDialog(ui.dialog):
 
             with ui.card_actions().classes("w-full align-left"):
                 with ui.row().classes("flex w-full"):
-                    ui.button("Done", on_click=lambda: self.submit(self.model.dt)).mark(
+                    ui.button(
+                        "Done",
+                        color="positive",
+                        on_click=lambda: self.submit(self.model.dt),
+                    ).mark(
                         "done",
                     )
                     ui.button(

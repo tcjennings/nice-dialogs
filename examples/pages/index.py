@@ -13,6 +13,7 @@ from nice_dialog.dialogs.datetime_picker import DatetimePickerDialog
 class NiceIndexModel:
     """Data model for the index page."""
 
+    cron: str = "* * * * *"
     dt_tz_frozen: bool = False
     dt_tz_hidden: bool = False
     upload_types: list[str] = field(default_factory=list)
@@ -60,7 +61,7 @@ class NiceIndexPage:
 
     async def show_cron_dialog(self) -> None:
         """Callback to display and await the result of a cron editor dialog."""
-        self.cron_dialog.reset()
+        self.cron_dialog.reset(self.model.cron)
         result: str | None = await self.cron_dialog
         ui.notify(result)
 
@@ -95,6 +96,9 @@ class NiceIndexPage:
         with self.content:
             with ui.row().classes("w-full items-center justify-start gap-4"):
                 ui.button("Cron Expression Editor", on_click=self.show_cron_dialog)
+                ui.input(label="Initial Cron Expression").bind_value(
+                    self, ("model", "cron")
+                )
             with ui.row().classes("w-full items-center justify-start gap-4"):
                 ui.button("Datetime Picker", on_click=self.show_dt_dialog)
                 ui.switch("Freeze Timezone Input").bind_value(
