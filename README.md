@@ -5,17 +5,19 @@
 
 A collection of opinionated [NiceGUI](https://nicegui.io) dialogs.
 
-## Cron Expression Editor
+## Dialogs
+
+### Cron Expression Editor
 
 Using `cron_converter` via `CronStr` from `pydantic-extra-types`, this dialog allows one to build a cron expression by populating the cron schedule parts from selectors.
 
-## Datetime Picker
+### Datetime Picker
 
 A dialog, on which one may pick an arbitrary date and time using the appropriate NiceGUI picker elements.
 A timezone field is optional and allows the user to set an IANA timezone while using the dialog.
 The returned datetime object is always timezone-aware and converted to UTC.
 
-## File Uploader
+### File Uploader
 
 A simple single-file uploader component dialog with options for restricting file types and max size.
 The dialog returns a NiceGUI `FileUpload` object for the consumer to dereference after the dialog returns.
