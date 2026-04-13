@@ -54,5 +54,6 @@ nice-dialog = { git = "https://github.com/tcjennings/nice-dialogs", rev = "..." 
 > [!TIP]
 > Consider pinning a `git` dependency source to a specific commit revision for maximum security.
 
-\[^1\]: This project uses modern Python syntax, including `datetime` format strings, structural pattern matching, and walrus operators.
-\[^2\]: This project uses NiceGUI features introduced in version 3.10 (e.g., nested dictionary binding) and is not compatible with older versions.
+[^1]: This project uses modern Python syntax, including `datetime` format strings, structural pattern matching, and walrus operators.
+
+[^2]: This project uses NiceGUI features introduced in version 3.10 (e.g., nested dictionary binding) and is not compatible with older versions.

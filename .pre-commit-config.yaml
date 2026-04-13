@@ -25,5 +25,6 @@ repos:
         args: ["--wrap", "keep", "--number"]
         exclude: ^\.cursor/
         additional_dependencies:
+          - mdformat-footnote
           - mdformat-gfm
           - mdformat-simple-breaks
