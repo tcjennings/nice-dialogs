@@ -1,12 +1,12 @@
 from collections.abc import Generator
-from dataclasses import dataclass
-from datetime import datetime, UTC
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from itertools import islice
 from typing import TYPE_CHECKING
 
 from nicegui import ui
 from nicegui.events import ValueChangeEventArguments
-
+from pydantic import ValidationError
 from pydantic_extra_types.cron import CronStr
 
 MINUTE_OPTIONS = {
@@ -51,6 +51,14 @@ class CronEditorModel:
     dom: str = "*"
     month: str = "*"
     dow: str = "*"
+    cron: CronStr = field(init=False)
+    is_valid: bool = field(init=False, default=True)
+
+    def __post_init__(self) -> None:
+        try:
+            self.cron = CronStr(str(self))
+        except (ValueError, ValidationError):
+            self.is_valid = False
 
     def __repr__(self) -> str:
         return f"{self.minute} {self.hour} {self.dom} {self.month} {self.dow}"
@@ -61,11 +69,23 @@ class CronEditorDialog(ui.dialog):
 
     Two action buttons are available: "Done" returns the current cron expression string;
     "Cancel" returns None.
+
+    Attributes
+    ----------
+    dialog_title: str
+        The title displayed at the top of the dialog.
+
+    model: CronEditorModel
+        A data model of the current cron expression, which includes string fields
+        for each cron part and a `CronStr` object for validation and scheduling.
+
+    initial_expression: str
+        The initial cron expression used with the dialog when it is first opened.
     """
 
     dialog_title: str
-    cron: CronStr
     model: CronEditorModel
+    initial_expression: str
 
     def __init__(
         self,
@@ -75,12 +95,18 @@ class CronEditorDialog(ui.dialog):
     ) -> None:
         super().__init__()
         self.dialog_title = dialog_title
-        self.model = CronEditorModel(*initial_expression.split())
+        self.initial_expression = initial_expression
+        self.reset()
         self.dialog_layout()
 
     if TYPE_CHECKING:
 
         def __await__(self) -> Generator[None, None, str | None]: ...
+
+    def reset(self, cron: str | None = None) -> None:
+        """Set the dialog to its initial state."""
+        cron = cron or self.initial_expression
+        self.model = CronEditorModel(*cron.split())
 
     def dialog_layout(self) -> None:
         with self, ui.card():
@@ -143,21 +169,32 @@ class CronEditorDialog(ui.dialog):
                 self.show_next_runs()
 
             with ui.card_actions().classes("w-full align-left"):
-                with ui.row():
+                with ui.row().classes("flex w-full items-end"):
                     ui.button(
                         "Done",
                         on_click=lambda: self.submit(str(self.model)),
-                    ).mark("done")
+                    ).bind_enabled_from(self, ("model", "is_valid")).mark("done")
                     ui.button(
                         "Cancel",
                         color="negative",
                         on_click=lambda: self.submit(None),
                     ).mark("cancel")
+                    ui.space()
+                    ui.label("Reset").classes(
+                        "text-sm text-negative font-medium cursor-pointer"
+                    ).on("click", self.reset).tooltip(
+                        f"{self.initial_expression}"
+                    ).mark("reset")
 
-    def handle_cron_change(self, e: ValueChangeEventArguments) -> None:
+    def handle_cron_change(self, event: ValueChangeEventArguments) -> None:
         """Callback handler from cron expression selectors"""
-        self.cron = CronStr(str(self.model))
-        self.show_next_runs.refresh()
+        try:
+            self.model.cron = CronStr(str(self.model))
+            self.model.is_valid = True
+            self.show_next_runs.refresh()
+        except (ValueError, ValidationError) as e:
+            self.model.is_valid = False
+            ui.notify(e, type="negative")
 
     @ui.refreshable_method
     def show_next_runs(self) -> None:
@@ -165,7 +202,7 @@ class CronEditorDialog(ui.dialog):
         current cron schedule.
         """
         now = datetime.now(tz=UTC)
-        for i, run in enumerate(islice(self.cron.schedule(), 5)):
+        for i, run in enumerate(islice(self.model.cron.schedule(), 5)):
             until_run = run - now
             with ui.row().classes("w-full items-center"):
                 ui.label(str(i + 1)).classes(

@@ -60,7 +60,8 @@ class NiceIndexPage:
 
     async def show_cron_dialog(self) -> None:
         """Callback to display and await the result of a cron editor dialog."""
-        result: str | None = await CronEditorDialog()
+        self.cron_dialog.reset()
+        result: str | None = await self.cron_dialog
         ui.notify(result)
 
     async def show_dt_dialog(self) -> None:
@@ -84,6 +85,7 @@ class NiceIndexPage:
         used to fetch data or perform other asynchronous setup tasks.
         """
         self.model = NiceIndexModel()
+        self.cron_dialog = CronEditorDialog()
         return self
 
     async def render(self) -> None:
