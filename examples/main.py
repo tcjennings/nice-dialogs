@@ -5,7 +5,7 @@
 #   "pywebview",
 # ]
 # [tool.uv.sources]
-# nice-dialog = { path = ".." }
+# nice-dialog = { path = "..", editable = true }
 # ///
 
 import os
