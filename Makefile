@@ -13,10 +13,12 @@ $(BUILD_DIST): $(PY_VENV)
 
 .PHONY: init
 init: $(PY_VENV)
-	uv run pre-commit install
+	uv run prek install -f
+	uv run prek prepare-hooks
 
 .PHONY: clean
 clean:
+	uv run prek cache clean
 	rm -rf $(PY_VENV)
 	find . -type f -name '.DS_Store' | xargs rm -rf
 	find . -type d -name '__pycache__' | xargs rm -rf
@@ -27,6 +29,10 @@ clean:
 .PHONY: examples
 examples:
 	uv run python3 -m examples.main
+
+.PHONY: lint
+lint:
+	uv run prek run --all-files --show-diff-on-failure --fail-fast
 
 .PHONY: typing
 typing:

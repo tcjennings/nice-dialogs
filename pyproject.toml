@@ -28,7 +28,7 @@ dynamic = ["version"]
 dev = [
     "faker",
     "mypy",
-    "pre-commit",
+    "prek",
     "pytest >= 9",
     "pytest-asyncio",
     "pytest-cov",
