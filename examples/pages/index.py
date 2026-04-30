@@ -17,6 +17,8 @@ class NiceIndexModel:
     dt_tz_frozen: bool = False
     dt_tz_hidden: bool = False
     upload_types: list[str] = field(default_factory=list)
+    confirmation_icon_color: str = "warning"
+    confirmation_icon_name: str = "warning"
 
 
 class NiceIndexPage:
@@ -81,6 +83,18 @@ class NiceIndexPage:
             allowed_file_types=self.model.upload_types,
         )
 
+    async def show_confirmation_dialog(self) -> None:
+        """Button callback to display and await the result of a confirmation dialog."""
+        from nice_dialog.dialogs.confirmation import ConfirmationDialog
+
+        confirm_dialog = ConfirmationDialog(
+            icon_color=self.model.confirmation_icon_color,
+            icon=self.model.confirmation_icon_name,
+        )
+        result, remember = await confirm_dialog
+        ui.notify(f"{result} [remembered: {remember}]", color="accent")
+        confirm_dialog.clear()
+
     async def setup(self) -> Self:
         """Method for creating page models or other components. This method can also be
         used to fetch data or perform other asynchronous setup tasks.
@@ -116,3 +130,11 @@ class NiceIndexPage:
                     new_value_mode="add-unique",
                     value=[".txt"],
                 ).bind_value_to(self, ("model", "upload_types"))
+            with ui.row().classes("w-full items-center justify-start gap-4"):
+                ui.button("Confirmation Dialog", on_click=self.show_confirmation_dialog)
+                ui.color_input(label="Icon Color").bind_value(
+                    self, ("model", "confirmation_icon_color")
+                )
+                ui.input(label="Icon Name").bind_value(
+                    self, ("model", "confirmation_icon_name")
+                )
