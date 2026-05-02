@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
@@ -5,9 +7,12 @@ from itertools import islice
 from typing import TYPE_CHECKING
 
 from nicegui import ui
-from nicegui.events import ValueChangeEventArguments
 from pydantic import ValidationError
 from pydantic_extra_types.cron import CronStr
+
+if TYPE_CHECKING:
+    from .types import ValueChangeEventArguments
+
 
 MINUTE_OPTIONS = {
     "*": "Every (*)",

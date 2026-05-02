@@ -2,6 +2,8 @@
 extra options.
 """
 
+from __future__ import annotations
+
 from collections.abc import Generator
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any

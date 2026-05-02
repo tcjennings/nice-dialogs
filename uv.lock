@@ -851,7 +851,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "nicegui", specifier = ">=3.10" },
+    { name = "nicegui", specifier = ">=3.10,<4" },
     { name = "pydantic-extra-types", extras = ["cron"], specifier = ">=2.10.6" },
 ]
 

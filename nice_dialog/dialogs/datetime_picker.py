@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, time, tzinfo
@@ -6,7 +8,9 @@ from typing import TYPE_CHECKING
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from nicegui import ui
-from nicegui.events import ValueChangeEventArguments
+
+if TYPE_CHECKING:
+    from .types import ValueChangeEventArguments, ValueChangeEventArgumentsBool
 
 
 class DialogOptions(IntFlag):
@@ -158,7 +162,7 @@ class DatetimePickerDialog(ui.dialog):
                             backward=lambda o: not o & DialogOptions.DISPLAY_12H,
                         )
 
-    def handle_24h_option_change(self, e: ValueChangeEventArguments) -> None:
+    def handle_24h_option_change(self, e: ValueChangeEventArgumentsBool) -> None:
         """Callback handler for 24h display option toggle."""
         # Instead of an XOR toggle, we are explicit in setting or clearing the
         # flag in order to keep the model consistent with the state of the UI.
