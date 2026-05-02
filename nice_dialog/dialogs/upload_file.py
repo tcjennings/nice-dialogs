@@ -14,6 +14,8 @@ is larger than Starlette's spool size, the upload is spilled to a temp file
 instead.
 """
 
+from __future__ import annotations
+
 from collections.abc import Generator
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
