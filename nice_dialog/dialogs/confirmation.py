@@ -11,6 +11,16 @@ from nicegui import ui
 
 @dataclass
 class ConfirmationDialogModel:
+    """Data model for a confirmation dialog.
+
+    Attributes allow customization of dialog elements, which allows the dialog
+    to be used in various situations that require custom messaging and light
+    theming. The text style of the message itself can be set by providing
+    Tailwind classes in the `message_text_classes` attribute, or customized
+    more directly using CSS with the `message_text_style` attribute; these are applied
+    to the `classes` and `style` of the message `ui.label` component, respectively.
+    """
+
     icon: str = "warning"
     icon_color: str = "warning"
     yes_button_label: str = "Yes"
@@ -22,6 +32,8 @@ class ConfirmationDialogModel:
     no_return_value: Any = False
     show_remember_checkbox: bool = True
     remember_checkbox_color: str = "accent"
+    message_text_classes: str = "font-medium"
+    message_text_style: str = ""
 
 
 class ConfirmationDialog(ui.dialog):
@@ -65,9 +77,14 @@ class ConfirmationDialog(ui.dialog):
     def dialog_layout(self) -> None:
         with self, ui.card():
             ui.label(self.dialog_title).classes("font-bold text-3xl")
-            with ui.row().classes("w-full"):
-                ui.icon(self.model.icon, size="4rem", color=self.model.icon_color)
-                ui.label(self.message)
+            with ui.row().classes("w-full items-center flex"):
+                ui.icon(
+                    self.model.icon, size="4rem", color=self.model.icon_color
+                ).classes("flex-none")
+                ui.label(self.message).classes(
+                    f"flex-1 {self.model.message_text_classes}"
+                ).style(self.model.message_text_style)
+
             with ui.card_actions().classes("w-full align-left"):
                 with ui.row().classes("flex w-full"):
                     ui.button(

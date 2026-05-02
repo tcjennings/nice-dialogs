@@ -29,8 +29,6 @@ jobs:
 
       - name: Run Linters
         uses: j178/prek-action@v2
-        with:
-          extra-args: '--refresh'
 
       - name: Type check with mypy
         run: uv run mypy -p nice_dialog

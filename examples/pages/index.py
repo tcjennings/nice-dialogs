@@ -19,6 +19,7 @@ class NiceIndexModel:
     upload_types: list[str] = field(default_factory=list)
     confirmation_icon_color: str = "warning"
     confirmation_icon_name: str = "warning"
+    confirmation_message: str = "Are you sure?"
 
 
 class NiceIndexPage:
@@ -90,6 +91,7 @@ class NiceIndexPage:
         confirm_dialog = ConfirmationDialog(
             icon_color=self.model.confirmation_icon_color,
             icon=self.model.confirmation_icon_name,
+            message=self.model.confirmation_message,
         )
         result, remember = await confirm_dialog
         ui.notify(f"{result} [remembered: {remember}]", color="accent")
@@ -137,4 +139,7 @@ class NiceIndexPage:
                 )
                 ui.input(label="Icon Name").bind_value(
                     self, ("model", "confirmation_icon_name")
+                )
+                ui.textarea(label="Message").bind_value(
+                    self, ("model", "confirmation_message")
                 )
