@@ -1,11 +1,11 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # dependencies = [
-#   "nice-dialog",
+#   "nice-dialogs",
 #   "pywebview",
 # ]
 # [tool.uv.sources]
-# nice-dialog = { path = "..", editable = true }
+# nice-dialogs = { path = "..", editable = true }
 # ///
 
 import os

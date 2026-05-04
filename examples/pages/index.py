@@ -5,8 +5,7 @@ from typing import Self
 from nicegui import ui
 from nicegui.elements.upload_files import FileUpload
 
-from nice_dialog.dialogs.cron_editor import CronEditorDialog
-from nice_dialog.dialogs.datetime_picker import DatetimePickerDialog
+from nice_dialogs.dialogs.cron_editor import CronEditorDialog
 
 
 @dataclass
@@ -70,6 +69,8 @@ class NiceIndexPage:
 
     async def show_dt_dialog(self) -> None:
         """Callback to display and await the result of a datetime picker dialog."""
+        from nice_dialogs.dialogs.datetime_picker import DatetimePickerDialog
+
         result: datetime | None = await DatetimePickerDialog(
             hide_timezone=self.model.dt_tz_hidden,
             freeze_timezone=self.model.dt_tz_frozen,
@@ -78,7 +79,7 @@ class NiceIndexPage:
 
     async def show_upload_dialog(self) -> None:
         """Button callback to display and await the result of an upload file dialog."""
-        from nice_dialog.dialogs.upload_file import UploadFileDialog
+        from nice_dialogs.dialogs.upload_file import UploadFileDialog
 
         _: FileUpload | None = await UploadFileDialog(
             allowed_file_types=self.model.upload_types,
@@ -86,7 +87,7 @@ class NiceIndexPage:
 
     async def show_confirmation_dialog(self) -> None:
         """Button callback to display and await the result of a confirmation dialog."""
-        from nice_dialog.dialogs.confirmation import ConfirmationDialog
+        from nice_dialogs.dialogs.confirmation import ConfirmationDialog
 
         confirm_dialog = ConfirmationDialog(
             icon_color=self.model.confirmation_icon_color,

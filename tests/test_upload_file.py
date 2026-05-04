@@ -10,7 +10,7 @@ pytestmark = pytest.mark.asyncio(loop_scope="function")
 """Sets the default asyncio loop scope."""
 
 
-@patch("nice_dialog.dialogs.upload_file.UploadFileDialog.handle_file_upload")
+@patch("nice_dialogs.dialogs.upload_file.UploadFileDialog.handle_file_upload")
 async def test_upload_file(
     mock_upload_handler: MagicMock, user: User, faker: Faker
 ) -> None:

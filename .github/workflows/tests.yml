@@ -34,7 +34,7 @@ jobs:
         uses: j178/prek-action@v2
 
       - name: Type check with mypy
-        run: uv run --with "nicegui==${{ matrix.nicegui-version }}.*" --isolated mypy -p nice_dialog
+        run: uv run --with "nicegui==${{ matrix.nicegui-version }}.*" --isolated mypy -p nice_dialogs
 
   test:
     needs: lint

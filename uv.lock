@@ -830,7 +830,7 @@ wheels = [
 ]
 
 [[package]]
-name = "nice-dialog"
+name = "nice-dialogs"
 source = { editable = "." }
 dependencies = [
     { name = "nicegui" },

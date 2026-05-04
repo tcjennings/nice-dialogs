@@ -36,4 +36,4 @@ lint:
 
 .PHONY: typing
 typing:
-	uv run mypy -p nice_dialog -p examples -p tests
+	uv run mypy -p nice_dialogs -p examples -p tests
