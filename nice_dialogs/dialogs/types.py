@@ -17,4 +17,10 @@ if TYPE_CHECKING:
     """A ValueChangeEventArguments for events that use a boolean value when a
     value is present."""
 
+    type ValueChangeEventArgumentsStr = nicegui.events.ValueChangeEventArguments[
+        str | None
+    ]
+    """A ValueChangeEventArguments for events that use a string value when a
+    value is present."""
+
 __all__ = ["ValueChangeEventArguments", "ValueChangeEventArgumentsBool"]

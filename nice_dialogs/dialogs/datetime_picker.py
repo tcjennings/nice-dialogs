@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from nicegui import ui
 
 if TYPE_CHECKING:
-    from .types import ValueChangeEventArguments, ValueChangeEventArgumentsBool
+    from .types import ValueChangeEventArgumentsBool, ValueChangeEventArgumentsStr
 
 
 class DialogOptions(IntFlag):
@@ -78,6 +78,7 @@ class DatetimePickerDialog(ui.dialog):
 
     def __init__(
         self,
+        initial_ts: int | float | None = None,
         *,
         dialog_title: str = "Datetime Picker",
         hide_timezone: bool = False,
@@ -85,8 +86,9 @@ class DatetimePickerDialog(ui.dialog):
     ) -> None:
         super().__init__()
         self.dialog_title = dialog_title
-        now = datetime.now(UTC).timestamp()
-        self.model = DatetimePickerModel(ts=now, tz=UTC)
+        if initial_ts is None:
+            initial_ts = datetime.now(UTC).timestamp()
+        self.model = DatetimePickerModel(ts=initial_ts, tz=UTC)
 
         if hide_timezone:
             self.model.options ^= DialogOptions.HIDE_TZ
@@ -178,7 +180,7 @@ class DatetimePickerDialog(ui.dialog):
 
     def handle_datetime_change(
         self,
-        e: ValueChangeEventArguments | None = None,
+        e: ValueChangeEventArgumentsStr | None = None,
     ) -> None:
         """Callback handler from datetime selectors.
 
@@ -188,7 +190,7 @@ class DatetimePickerDialog(ui.dialog):
         try:
             d = date.fromisoformat(self.model._date)
             t = time.fromisoformat(self.model._time)
-        except ValueError:
+        except (TypeError, ValueError):
             # case if either input is not yet populated
             return None
 
