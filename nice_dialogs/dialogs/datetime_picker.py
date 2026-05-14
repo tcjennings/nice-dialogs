@@ -42,7 +42,7 @@ class DatetimePickerModel:
 
     ts: float
     tz: tzinfo = UTC
-    options: DialogOptions = DialogOptions(0)
+    options: DialogOptions = field(default_factory=lambda: DialogOptions(0))
     _date: str = field(init=False, default="")
     _time: str = field(init=False, default="")
 
