@@ -32,7 +32,7 @@ class ConfirmationDialogModel:
     remember: bool = False
     yes_return_value: Any = True
     no_return_value: Any = False
-    show_remember_checkbox: bool = True
+    show_remember_checkbox: bool = False
     remember_checkbox_color: str = "accent"
     message_text_classes: str = "font-medium"
     message_text_style: str = ""
