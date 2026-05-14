@@ -29,29 +29,34 @@ async def test_cron_editor(user: User) -> None:
 
     # Click the button and ensure the dialog opens with the correct contents
     user.find("Cron Expression Editor").click()
-    await user.should_see("Cron Expression Editor")
-    await user.should_see("* * * * *")
+    await user.should_see(kind=ui.button, marker="done")
+    await user.should_see(marker="cron-expression-display", content="* * * * *")
 
-    for pair in [
-        ("dow", "Weekends"),
-        ("minute", "*/15"),
-        ("hour", "Midnight"),
-        ("dom", "Every (*)"),
-        ("month", "March"),
+    # the triple is the marker for the select, the option text to click, and the
+    # expected cron value after clicking that option
+    for triple in [
+        ("dow", "Tuesday", "* * * * 2"),
+        ("month", "May", "* * * 5 2"),
+        ("hour", "Midnight", "* 0 * 5 2"),
+        ("minute", "Every 15 minutes", "*/15 0 * 5 2"),
     ]:
-        s, o = pair
+        m, o, c = triple
         # Click to open the select dropdown and ensure the options are visible
-        user.find(kind=ui.select, marker=s).click()
+        user.find(kind=ui.select, marker=m).click()
+
+        select_dropdown = user.find(
+            kind=ui.select,
+            marker=m,
+        ).elements.pop()
+        assert select_dropdown.is_showing_popup
         await user.should_see(o, retries=50)
 
         # Find the option and click it
         user.find(o).click()
-        await user.should_see(o, retries=50)
-
-    await user.should_see("*/15 0 * 3 0,6", retries=50)
+        await user.should_see(c, retries=50)
 
     cron_display = user.find(
         kind=ui.code,
         marker="cron-expression-display",
     ).elements.pop()
-    assert cron_display.content == "*/15 0 * 3 0,6"
+    assert cron_display.content == "*/15 0 * 5 2"
