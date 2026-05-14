@@ -1,9 +1,10 @@
 from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Self
+from enum import Enum, StrEnum, auto
+from typing import Literal, Self
 
 from nicegui import ui
 from nicegui.elements.upload_files import FileUpload
+from nicegui.version import __version__ as nicegui_version
 
 from nice_dialogs.dialogs.cron_editor import CronEditorDialog
 
@@ -19,6 +20,20 @@ class NiceIndexModel:
     confirmation_icon_color: str = "warning"
     confirmation_icon_name: str = "warning"
     confirmation_message: str = "Are you sure?"
+
+
+class EnumValueOptions(StrEnum):
+    OPTION_A = "Option A"
+    OPTION_B = "Option B"
+    OPTION_C = "Option C"
+    OPTION_D = "Option D"
+
+
+class EnumOptions(Enum):
+    OPTION_A = auto()
+    OPTION_B = auto()
+    OPTION_C = auto()
+    OPTION_D = auto()
 
 
 class NiceIndexPage:
@@ -52,9 +67,11 @@ class NiceIndexPage:
         context manager (see the `render` method).
         """
         with ui.header(elevated=True).classes(
-            "h-[4rem] min-h-[4rem] items-center justify-between px-4 p-4",
+            "w-full h-[4rem] min-h-[4rem] items-center justify-between px-4 p-4",
         ):
             ui.label("Nice Dialogs").classes("text-[2rem]")
+            ui.space()
+            ui.label(nicegui_version).classes("text-sm text-white")
 
         with ui.column().classes(
             "h-[calc(100vh-4rem)] min-h-[4rem] overflow-hidden p-0 m-0 w-full",
@@ -63,18 +80,22 @@ class NiceIndexPage:
 
     async def show_cron_dialog(self) -> None:
         """Callback to display and await the result of a cron editor dialog."""
-        self.cron_dialog.reset(self.model.cron)
-        result: str | None = await self.cron_dialog
+        cron_dialog = CronEditorDialog()
+        cron_dialog.reset(self.model.cron)
+        result: str | None = await cron_dialog
+        cron_dialog.clear()
         ui.notify(result)
 
     async def show_dt_dialog(self) -> None:
         """Callback to display and await the result of a datetime picker dialog."""
         from nice_dialogs.dialogs.datetime_picker import DatetimePickerDialog
 
-        result: datetime | None = await DatetimePickerDialog(
+        dtpicker = DatetimePickerDialog(
             hide_timezone=self.model.dt_tz_hidden,
             freeze_timezone=self.model.dt_tz_frozen,
         )
+        result = await dtpicker
+        dtpicker.clear()
         ui.notify(result)
 
     async def show_upload_dialog(self) -> None:
@@ -98,12 +119,38 @@ class NiceIndexPage:
         ui.notify(f"{result} [remembered: {remember}]", color="accent")
         confirm_dialog.clear()
 
+    async def show_labelmaker_dialog(self) -> None:
+        """Button callback to display and await the result of a label maker dialog."""
+        from nice_dialogs.dialogs.labelmaker import LabelMakerDialog
+
+        labelmaker_dialog = LabelMakerDialog(
+            "Testing Label Constructor",
+            num_inputs=4,
+            input_labels=["First", "Second"],
+            values=[
+                ("One", "Two", "Three", "Four"),
+                ("1", "2", "3", "4"),
+                ("uno", "dos", "tres", "cuatro"),
+            ],
+            validators=[{"Input must be less than 5 characters": lambda v: len(v) < 5}],
+            value_types=[
+                str,
+                EnumOptions,
+                EnumValueOptions,
+                Literal["Option Z", "Option Y", "Option X", "Option W"],
+            ],
+        )
+        result = await labelmaker_dialog
+        if result is not None:
+            display_result = result[0]
+            ui.notify(display_result, color="accent")
+        labelmaker_dialog.clear()
+
     async def setup(self) -> Self:
         """Method for creating page models or other components. This method can also be
         used to fetch data or perform other asynchronous setup tasks.
         """
         self.model = NiceIndexModel()
-        self.cron_dialog = CronEditorDialog()
         return self
 
     async def render(self) -> None:
@@ -144,3 +191,8 @@ class NiceIndexPage:
                 ui.textarea(label="Message").bind_value(
                     self, ("model", "confirmation_message")
                 )
+
+            with ui.row().classes("w-full items-center justify-start gap-4"):
+                ui.button(
+                    "LabelMaker Dialog", on_click=self.show_labelmaker_dialog
+                ).mark("labelmaker")

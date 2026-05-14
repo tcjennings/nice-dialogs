@@ -47,6 +47,10 @@ packages = ["nice_dialogs"]
 path = "nice_dialogs/__init__.py"
 fallback-version = "0.0.0"
 
+[tool.uv]
+trusted-publishing = "always"
+upgrade = true
+
 [tool.mypy]
 strict = true
 
