@@ -12,7 +12,14 @@ env:
   UV_MANAGED_PYTHON: "1"
 
 jobs:
+  commitlint:
+    uses: ./.github/workflows/commitlint.yml
+    with:
+      rebase-checker: true
+      check-conventional: true
+
   lint:
+    needs: commitlint
     runs-on: ubuntu-latest
     strategy:
       matrix:

@@ -1,0 +1,75 @@
+name: Rebase Checker and Commitlint
+
+"on":
+  workflow_call:
+    inputs:
+      check-conventional:
+        description: 'Check conventional commits'
+        required: false
+        type: boolean
+        default: false
+      rebase-checker:
+        description: 'Check for merge commits of main'
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  rebase-checker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6  # v2.2.0
+        with:
+          bun-version: latest
+
+      - name: Install commitlint
+        run: >
+          bun add --global
+          @commitlint/cli@21.0.1
+          @commitlint/config-conventional@21.0.1
+          conventional-commits-parser@6.4.0
+
+      - name: Create rebase-checker commitlint config
+        if: inputs.rebase-checker
+        run: |
+          cat > rebase-checker.config.mjs << 'EOF'
+          export default {
+            defaultIgnores: false,
+            ignores: [(commit) => !/^Merge branch/.test(commit)],
+            plugins: [{
+              rules: {
+                'rebase-checker': (commitMessage, when, pattern) => {
+                  const { raw } = commitMessage;
+                  if (!pattern) return [false, 'missing pattern'];
+                  const regex = new RegExp(pattern);
+                  let result = regex.test(raw ?? '');
+                  if (when === 'never') result = !result;
+                  return [result, `You must rebase against main, not merge it`];
+                },
+              },
+            }],
+            rules: {
+              'rebase-checker': [2, 'never', /^Merge branch '?(main|master)'? into (.*?)(?:\r?\n)*$/],
+            },
+          };
+          EOF
+
+      - name: Rebase Checker (PR Branch must be rebased, not merged into)
+        if: github.event_name == 'pull_request' && inputs.rebase-checker
+        run: >
+          bunx --bun commitlint
+          --config ./rebase-checker.config.mjs
+          --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
+          --verbose
+
+      - name: Validate PR Commits as Conventional Commits
+        if: github.event_name == 'pull_request' && inputs.check-conventional
+        run: >
+          bunx --bun commitlint
+          --extends @commitlint/config-conventional
+          --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
+          --verbose
