@@ -27,7 +27,7 @@ The dialog returns a NiceGUI `FileUpload` object for the consumer to dereference
 
 - uv. This project is managed by [uv](https://astral.sh/uv)
 - Python >= 3.13[^1].
-- NiceGUI >= 3.10[^2].
+- NiceGUI >= 3.11[^2].
 
 ## Examples
 
@@ -59,4 +59,4 @@ nice-dialog = { git = "https://github.com/tcjennings/nice-dialogs", rev = "..." 
 
 [^1]: This project uses modern Python syntax, including `datetime` format strings, structural pattern matching, and walrus operators.
 
-[^2]: This project uses NiceGUI features introduced in version 3.10 (e.g., nested dictionary binding) and is not compatible with older versions.
+[^2]: This project uses NiceGUI features introduced in version 3.11 (e.g., nested dictionary binding and type generics) and is not compatible with older versions.
