@@ -23,4 +23,8 @@ if TYPE_CHECKING:
     """A ValueChangeEventArguments for events that use a string value when a
     value is present."""
 
-__all__ = ["ValueChangeEventArguments", "ValueChangeEventArgumentsBool"]
+__all__ = [
+    "ValueChangeEventArguments",
+    "ValueChangeEventArgumentsBool",
+    "ValueChangeEventArgumentsStr",
+]
