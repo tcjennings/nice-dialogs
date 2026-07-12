@@ -1,0 +1,62 @@
+name: Seed Release Branch
+
+"on":
+  pull_request:
+    branches:
+      - main
+    types:
+      - closed
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  seed-release-branch:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0  # 7.0.0
+        with:
+          fetch-depth: 0
+
+      - name: Determine next semantic release
+        id: psr
+        uses: python-semantic-release/python-semantic-release@39dd2052f2ce8282a5d932c31d58a2ca06d2550e  # 10.6.1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          no_operation_mode: true
+
+      - name: Compute release branch name
+        if: steps.psr.outputs.released == 'true'
+        id: branch
+        run: |
+          VERSION="${{ steps.psr.outputs.version }}"
+          echo "version=$VERSION"
+          echo "branch=release/${VERSION%.*}" >> "$GITHUB_OUTPUT"
+
+      - name: Check whether release branch exists
+        if: steps.psr.outputs.released == 'true'
+        id: exists
+        env:
+          BRANCH: ${{ steps.branch.outputs.branch }}
+        run: |
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create and push release branch
+        if: steps.psr.outputs.released == 'true' && steps.exists.outputs.exists != 'true'
+        env:
+          BRANCH: ${{ steps.branch.outputs.branch }}
+        run: |
+          git switch -c "$BRANCH"
+          git push --set-upstream origin "$BRANCH"
+
+      - name: Release branch already exists
+        if: steps.psr.outputs.released == 'true' && steps.exists.outputs.exists == 'true'
+        run: |
+          echo "Release branch '${{ steps.branch.outputs.branch }}' already exists."

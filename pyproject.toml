@@ -85,3 +85,8 @@ select = [
     "LOG",
     "RUF100",
 ]
+
+[tool.semantic_release]
+version_variables = ["nice_dialogs/__init__.py:__version__"]
+commit_message = "chore: bump version to {version}"
+commit_parser = "conventional"
