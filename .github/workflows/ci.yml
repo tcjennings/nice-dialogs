@@ -42,7 +42,7 @@ jobs:
       - name: Type check with mypy
         run: uv run --with "nicegui==${{ matrix.nicegui-version }}.*" --isolated mypy -p nice_dialogs
 
-  test:
+  test-matrix:
     needs: lint
     runs-on: ubuntu-latest
     strategy:
@@ -67,3 +67,10 @@ jobs:
 
       - name: Run tests
         run: uv run pytest
+
+  test:
+    needs: test-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test Matrix Passed
+        run: echo "Testing Matrix has passed."
