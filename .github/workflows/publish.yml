@@ -7,7 +7,6 @@ name: Publish Package
     types: [published]
 
 env:
-  UV_VERSION: "0.11.x"
   UV_MANAGED_PYTHON: "1"
 
 jobs:
@@ -24,7 +23,7 @@ jobs:
       - name: Install uv
         uses: astral-sh/setup-uv@ae62891fec2bb8e7d6c99fc78c9fec3a63790f8d # v10.0.0
         with:
-          version: ${{ env.UV_VERSION }}
+          version: "latest-known"
           python-version: "3.14"
 
       - name: Build distributions
