@@ -49,6 +49,7 @@ path = "nice_dialogs/__init__.py"
 fallback-version = "0.0.0"
 
 [tool.uv]
+required-version = ">=0.13.6"
 trusted-publishing = "always"
 upgrade = true
 
