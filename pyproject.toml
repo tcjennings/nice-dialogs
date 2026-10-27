@@ -51,7 +51,7 @@ source = "vcs"
 fallback_version = "0.0.0"
 
 [tool.uv]
-required-version = ">=0.13.6"
+required-version = ">=0.13.0"
 trusted-publishing = "always"
 upgrade = true
 # The version is derived from git tags, so refresh the editable install on new tags
