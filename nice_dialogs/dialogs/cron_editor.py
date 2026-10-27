@@ -11,6 +11,8 @@ from pydantic import ValidationError
 from pydantic_extra_types.cron import CronStr
 
 if TYPE_CHECKING:
+    from nicegui.events import GenericEventArguments
+
     from .types import ValueChangeEventArguments
 
 
@@ -106,6 +108,8 @@ class CronEditorDialog(ui.dialog):
     dialog_title: str
     model: CronEditorModel
     initial_expression: str
+    _drafts: dict[str, str]
+    """Text most recently typed into each cron part's select, by part name."""
 
     def __init__(
         self,
@@ -115,6 +119,7 @@ class CronEditorDialog(ui.dialog):
         super().__init__()
         self.dialog_title = dialog_title
         self.initial_expression = ""
+        self._drafts = {}
         self.reset()
         self.dialog_layout()
 
@@ -137,6 +142,7 @@ class CronEditorDialog(ui.dialog):
 
         # Set the data model using the provided cron expression or the fallback
         cron = cron or self.initial_expression
+        self._drafts.clear()
         self.model = CronEditorModel(*cron.split())
 
         if self.model.is_valid:
@@ -284,6 +290,15 @@ class CronEditorDialog(ui.dialog):
                     .mark("dow")
                 )
 
+            for select, part in (
+                (self.minute_select, "minute"),
+                (self.hour_select, "hour"),
+                (self.dom_select, "dom"),
+                (self.month_select, "month"),
+                (self.dow_select, "dow"),
+            ):
+                self.commit_on_blur(select, part)
+
             with ui.column().classes("w-full"):
                 ui.label("Next 5 Runs").classes("text-sm text-gray-400 font-medium")
                 self.show_next_runs()
@@ -306,6 +321,47 @@ class CronEditorDialog(ui.dialog):
                     ).on("click", self.reset).tooltip(
                         f"{self.initial_expression}"
                     ).mark("reset")
+
+    def commit_on_blur(self, select: ui.select, part: str) -> None:
+        """Keep text typed into a select when the user clicks away.
+
+        Quasar only converts typed text into a value on Enter or Tab and discards
+        it on blur. This remembers the latest text typed into the select and
+        commits it when the select loses focus, as if the user had pressed Tab.
+
+        Quasar also reports the label of the current selection as input text when
+        the select is focused, so the remembered text is dropped whenever the
+        select gains focus or a value is chosen, and ignored if it only repeats
+        the label of the current value.
+        """
+
+        def remember(event: GenericEventArguments) -> None:
+            self._drafts[part] = (event.args or "").strip()
+
+        def forget() -> None:
+            self._drafts.pop(part, None)
+
+        def commit() -> None:
+            text = self._drafts.pop(part, "")
+            if TYPE_CHECKING:
+                assert isinstance(select.options, dict)
+            current = getattr(self.model, part)
+            if not text or text == select.options.get(current):
+                return
+            if text in select.options:
+                value = text
+            elif text in select.options.values():
+                value = next(k for k, v in select.options.items() if v == text)
+            else:
+                value = text
+            if value != current:
+                setattr(self.model, part, value)
+                self.update_input_options()
+
+        select.on("focus", forget)
+        select.on("update:model-value", forget)
+        select.on("input-value", remember)
+        select.on("blur", commit)
 
     def handle_cron_change(self, event: ValueChangeEventArguments) -> None:
         """Callback handler from cron expression selectors"""
