@@ -4,7 +4,7 @@ from collections.abc import Generator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from itertools import islice
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
 from nicegui import ui
 from pydantic import ValidationError
@@ -58,10 +58,52 @@ UPCOMING_RUNS = 5
 class CronEditorModel:
     """Data model of a cron expression and its validity.
 
-    An expression is only valid if it parses *and* has at least one upcoming run.
-    The second condition rejects expressions that can never fire, such as
-    February 30th, without any date logic of our own: those are simply the
+    The expression is held as one string per cron part so that each part can be
+    edited on its own. An expression is only valid if it parses *and* has at least
+    one upcoming run. The second condition rejects expressions that can never fire,
+    such as February 30th, without any date logic of our own: those are simply the
     expressions for which the schedule is empty.
+
+    Use `from_expression` to create a model from a whole expression string. The
+    model is validated when it is created, and `validate` must be called again
+    after any part is changed.
+
+    Parameters
+    ----------
+    minute : str, default "*"
+        The minute part of the expression.
+    hour : str, default "*"
+        The hour part of the expression.
+    dom : str, default "*"
+        The day-of-month part of the expression.
+    month : str, default "*"
+        The month part of the expression.
+    dow : str, default "*"
+        The day-of-week part of the expression.
+    cron : CronStr, optional
+        An expression that has already been parsed from these parts. If given, the
+        parts are not parsed again, and only the upcoming runs are found.
+
+    Attributes
+    ----------
+    minute, hour, dom, month, dow : str
+        The parts of the expression, as given or as most recently edited.
+    cron : CronStr or None
+        The most recent expression that parsed, with or without any runs. It is
+        `None` until the parts have parsed.
+    upcoming : list of datetime
+        Up to `UPCOMING_RUNS` upcoming runs of the expression. Empty if the
+        expression is malformed or never runs.
+    is_valid : bool
+        Whether the expression parses and has at least one upcoming run.
+    error : str
+        The reason the expression is not valid, or an empty string if it is.
+
+    Notes
+    -----
+    `str()` and `repr()` of the model give the expression as space separated parts,
+    exactly as they are held, which is not necessarily in the canonical form of
+    `cron`.
     """
 
     minute: str = "*"
@@ -69,22 +111,36 @@ class CronEditorModel:
     dom: str = "*"
     month: str = "*"
     dow: str = "*"
-    cron: CronStr = field(init=False)
+    cron: CronStr | None = field(default=None, kw_only=True)
     upcoming: list[datetime] = field(init=False, default_factory=list)
     is_valid: bool = field(init=False, default=True)
     error: str = field(init=False, default="")
 
     def __post_init__(self) -> None:
-        self.validate()
+        # An expression that is already parsed does not need parsing again
+        if self.cron is None:
+            self.validate()
+        else:
+            self._find_runs(self.cron)
 
     def __repr__(self) -> str:
         return f"{self.minute} {self.hour} {self.dom} {self.month} {self.dow}"
+
+    @classmethod
+    def from_expression(cls, expression: str) -> Self:
+        """Create a model from a cron expression string.
+
+        The expression is validated by `CronStr`, which raises a `ValueError` if it
+        is malformed or out of range. An expression that is well formed but never
+        runs does not raise: the model is returned with `is_valid` false.
+        """
+        return cls(*expression.split(), cron=CronStr(expression))
 
     def validate(self) -> bool:
         """Validate the current cron parts and find the upcoming runs.
 
         Sets `is_valid`, `error`, and `upcoming`, and returns `is_valid`. The
-        `cron` attribute is only replaced by a valid expression.
+        `cron` attribute is only replaced by an expression that parses.
         """
         self.upcoming = []
         try:
@@ -92,7 +148,11 @@ class CronEditorModel:
         except (ValueError, ValidationError) as e:
             self.is_valid, self.error = False, str(e)
             return False
+        return self._find_runs(cron)
 
+    def _find_runs(self, cron: CronStr) -> bool:
+        """Find the upcoming runs of a parsed expression and set the model's state."""
+        self.cron = cron
         try:
             self.upcoming = list(islice(cron.schedule(), UPCOMING_RUNS))
         except Exception:
@@ -103,7 +163,6 @@ class CronEditorModel:
             self.is_valid, self.error = False, "This expression never runs"
             return False
 
-        self.cron = cron
         self.is_valid, self.error = True, ""
         return True
 
@@ -118,9 +177,11 @@ class CronEditorDialog(ui.dialog):
     expression can be replaced by calling the `reset` method with a new cron expression
     string.
 
-    If an invalid cron expression is used to create or reset the dialog, a notification
-    will alert the user, but the dialog will remain open in order to allow the user to
-    correct the expression.
+    If a cron expression that is malformed, or has a value out of range, is used to
+    reset the dialog, a notification will alert the user and the dialog keeps its
+    current expression. If the expression is well formed but can never run, such as
+    February 30th, a notification will alert the user, but the dialog will show the
+    expression and remain open in order to allow the user to correct it.
 
     The dialog cannot be closed with a positive action if the cron expression is
     invalid.
@@ -168,23 +229,33 @@ class CronEditorDialog(ui.dialog):
         """Set the dialog to its initial state or to a provided cron expression by
         establishing or replacing the dialog's data model.
 
-        If the provided cron expression is valid and contains novel tokens, those
-        tokens will be added to the options of the relevant select components.
+        If the provided cron expression contains novel tokens, those tokens will be
+        added to the options of the relevant select components.
 
         This method is called when the dialog is first created, and can be called
         at any time to set the dialog to a specific new cron expression.
+
+        The expression is validated by `CronStr` when the model is created. One that
+        does not validate is rejected with a notification and leaves the dialog
+        unchanged.
         """
         # Set the dialog's initial or fallback expression on first method call
         self.initial_expression = self.initial_expression or cron or "* * * * *"
 
         # Set the data model using the provided cron expression or the fallback
         cron = cron or self.initial_expression
-        self._drafts.clear()
-        self.model = CronEditorModel(*cron.split())
+        try:
+            model = CronEditorModel.from_expression(cron)
+        except (ValueError, ValidationError) as e:
+            ui.notify(f"Invalid cron expression: {cron!r} ({e})", type="negative")
+            return
 
-        if self.model.is_valid:
-            self.update_input_options()
-        else:
+        self._drafts.clear()
+        self.model = model
+
+        # Every token must be an option of its select to be shown, valid or not
+        self.update_input_options()
+        if not self.model.is_valid:
             ui.notify(
                 f"Invalid cron expression: {cron} ({self.model.error})",
                 type="negative",

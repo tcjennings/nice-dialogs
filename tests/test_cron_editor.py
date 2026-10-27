@@ -6,6 +6,8 @@ import pytest
 from nicegui import ui
 from nicegui.testing import User
 
+from nice_dialogs.dialogs.cron_editor import CronEditorDialog
+
 pytestmark = pytest.mark.asyncio(loop_scope="function")
 """Sets the default asyncio loop scope."""
 
@@ -52,6 +54,14 @@ def next_runs(user: User) -> list[str]:
         for label in labels
         if re.fullmatch(r"\w{3}, \d{2}-\w{3} \d{4} at .*", label.text)
     ]
+
+
+def reset_dialog(user: User, expression: str) -> None:
+    """Programmatically reset the open dialog to a cron expression."""
+    dialog = next(iter(user.find(kind=CronEditorDialog).elements))
+    assert user.client is not None
+    with user.client:
+        dialog.reset(expression)
 
 
 async def type_into(user: User, marker: str, text: str) -> None:
@@ -254,3 +264,80 @@ async def test_cron_editor_recovers_after_an_invalid_expression(user: User) -> N
     assert len(next_runs(user)) == 5
     done = next(iter(user.find(kind=ui.button, marker="done").elements))
     assert done.enabled
+
+
+@pytest.mark.parametrize(
+    ("expression", "reason"),
+    [
+        ("* * *", "must contain 5 space separated components"),
+        ("0 5 * *", "must contain 5 space separated components"),
+        ("* * * * * *", "must contain 5 space separated components"),
+        ("1 2 3 4 5 6 7", "must contain 5 space separated components"),
+        ("99 * * * *", "Value 99 out of range"),
+    ],
+)
+async def test_cron_editor_rejects_an_invalid_expression_on_reset(
+    user: User,
+    expression: str,
+    reason: str,
+) -> None:
+    """An expression that `CronStr` rejects is refused, and the dialog is unchanged.
+
+    The dialog relies on `CronStr` for validation, and only splits an expression
+    into its fields once it has validated. Fewer than five fields used to be padded
+    with `*` and more than five raised a `TypeError`.
+    """
+    await open_cron_editor(user)
+    await choose_option(user, "dow", "Tuesday", "* * * * 2")
+
+    reset_dialog(user, expression)
+
+    await user.should_see(reason, retries=PATIENCE)
+    await settle()
+    await should_see_cron(user, "* * * * 2")
+    assert next_runs(user)
+    done = next(iter(user.find(kind=ui.button, marker="done").elements))
+    assert done.enabled
+
+
+async def test_cron_editor_reset_to_an_expression(user: User) -> None:
+    """Resetting to a valid expression shows it and keeps the dialog usable."""
+    await open_cron_editor(user)
+
+    reset_dialog(user, "30 4 1 * *")
+
+    await should_see_cron(user, "30 4 1 * *")
+    await settle()
+    assert len(next_runs(user)) == 5
+    done = next(iter(user.find(kind=ui.button, marker="done").elements))
+    assert done.enabled
+
+
+async def test_cron_editor_reset_to_an_expression_that_never_runs(user: User) -> None:
+    """A well formed expression that can never run is shown so the user can fix it."""
+    await open_cron_editor(user)
+
+    reset_dialog(user, "0 0 30 2 *")
+
+    await user.should_see("This expression never runs", retries=PATIENCE)
+    await should_see_cron(user, "0 0 30 2 *")
+    await user.should_see("No upcoming runs for this expression", retries=PATIENCE)
+    await settle()
+    dom = next(iter(user.find(kind=ui.select, marker="dom").elements))
+    assert dom.value == "30"  # a value that is not an option would be nulled
+    assert isinstance(dom.options, dict)
+    assert dom.options["30"] == "30"
+    done = next(iter(user.find(kind=ui.button, marker="done").elements))
+    assert not done.enabled
+
+
+async def test_cron_editor_reset_button_restores_the_initial_expression(
+    user: User,
+) -> None:
+    """The Reset label sets the expression back to where the dialog started."""
+    await open_cron_editor(user)
+    await choose_option(user, "dow", "Tuesday", "* * * * 2")
+
+    user.find(marker="reset").click()
+
+    await should_see_cron(user, "* * * * *")

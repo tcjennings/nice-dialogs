@@ -54,3 +54,25 @@ def test_validate_recovers_when_the_expression_is_fixed() -> None:
     assert model.is_valid
     assert model.error == ""
     assert len(model.upcoming) == UPCOMING_RUNS
+
+
+def test_from_expression() -> None:
+    model = CronEditorModel.from_expression("30 4 1 * *")
+
+    assert model.is_valid
+    assert repr(model) == "30 4 1 * *"
+    assert len(model.upcoming) == UPCOMING_RUNS
+
+
+def test_from_expression_that_never_runs() -> None:
+    model = CronEditorModel.from_expression("0 0 30 2 *")
+
+    assert not model.is_valid
+    assert model.error == "This expression never runs"
+    assert repr(model) == "0 0 30 2 *"
+
+
+@pytest.mark.parametrize("expression", ["* * *", "* * * * * *", "99 * * * *", ""])
+def test_from_expression_rejects_a_malformed_expression(expression: str) -> None:
+    with pytest.raises(ValueError):
+        CronEditorModel.from_expression(expression)
