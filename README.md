@@ -40,6 +40,25 @@ The example application is also used by the NiceGUI `User` test fixture.
 To prepare for development, run `make init`.
 The contents of the `.vscode/` directory may be useful for IDE-based testing and debugging.
 
+## Releasing
+
+The package version is derived from git tags (`hatch-vcs`), and releases are made with [python-semantic-release](https://python-semantic-release.readthedocs.io/) from the conventional commits on `main`.
+There is no version commit; the tag is placed on the merged commit, so nothing needs to be pushed to the protected `main` branch.
+
+1. Merge the changes to `main` and `git pull`.
+2. Run `make release-dry-run` to see the next version PSR would choose.
+3. Export a `GH_TOKEN` with `repo` scope and run `make release`.
+   This tags the commit and creates the GitHub Release, which triggers the publish workflow (subject to approval of the `pypi` environment).
+
+Commits that are only `chore`, `docs`, etc. do not produce a release.
+
+### Point releases
+
+To release a fix for an older version, cut a maintenance branch from the release tag, e.g. `git switch -c release/1.4.x 1.4.0`, cherry-pick the fix commits (`git cherry-pick -x ...`), and push the branch.
+Run `make release-dry-run` and then `make release` from that branch to publish `1.4.1`, `1.4.2`, and so on.
+`make release` refuses to run on a `release/X.Y.x` branch if the next version falls outside the `X.Y` series, for example because a `feat:` commit was cherry-picked.
+The branch must be cut from a tag that already contains the `[tool.semantic_release]` configuration.
+
 ## Usage in Projects
 
 To use these dialogs in a NiceGUI application, set a dependency; example for `uv` and `pyproject.toml` shown:
