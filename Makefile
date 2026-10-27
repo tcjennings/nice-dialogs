@@ -42,6 +42,15 @@ typing:
 release-dry-run:
 	uv run semantic-release --noop version --no-commit --no-changelog
 
+# On a maintenance branch (release/X.Y.x) only patch releases are allowed.
 .PHONY: release
 release:
+	@branch=$$(git branch --show-current); \
+	next=$$(uv run semantic-release --noop version --no-commit --no-changelog --print 2>/dev/null | tail -n 1); \
+	case "$$branch" in \
+	  release/*) series=$${branch#release/}; series=$${series%.x}; \
+	    case "$$next" in "$$series".*) ;; \
+	      *) echo "Next version $$next is outside the $$series series of $$branch; cherry-pick only fixes."; exit 1;; \
+	    esac;; \
+	esac; \
 	uv run semantic-release version --no-commit --no-changelog

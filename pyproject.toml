@@ -71,6 +71,10 @@ exclude_commit_patterns = [
 match = "main"
 prerelease = false
 
+[tool.semantic_release.branches.release]
+match = "release/.*"
+prerelease = false
+
 [tool.mypy]
 strict = true
 
