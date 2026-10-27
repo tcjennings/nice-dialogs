@@ -32,6 +32,7 @@ dev = [
     "pytest >= 9",
     "pytest-asyncio",
     "pytest-cov",
+    "python-semantic-release >= 10.7, < 11",
     "pywebview",
     "ruff",
 ]
@@ -50,6 +51,26 @@ fallback-version = "0.0.0"
 [tool.uv]
 trusted-publishing = "always"
 upgrade = true
+
+[tool.semantic_release]
+tag_format = "{version}"
+version_variables = ["nice_dialogs/__init__.py:__version__"]
+commit_message = "chore(release): {version} [skip ci]"
+allow_zero_version = false
+
+[tool.semantic_release.changelog]
+exclude_commit_patterns = [
+    '''^chore(\([^)]*\))?!?:''',
+    '''^Merge ''',
+]
+
+[tool.semantic_release.branches.main]
+match = "main"
+prerelease = false
+
+[tool.semantic_release.branches.release]
+match = "release/.*"
+prerelease = false
 
 [tool.mypy]
 strict = true
