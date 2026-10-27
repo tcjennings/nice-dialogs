@@ -50,25 +50,62 @@ MONTH_OPTIONS = {"*": "Every (*)"} | {
 }
 """Default set of cron-month options (12 months)"""
 
+UPCOMING_RUNS = 5
+"""Number of upcoming runs to find and show for a cron expression."""
+
 
 @dataclass
 class CronEditorModel:
+    """Data model of a cron expression and its validity.
+
+    An expression is only valid if it parses *and* has at least one upcoming run.
+    The second condition rejects expressions that can never fire, such as
+    February 30th, without any date logic of our own: those are simply the
+    expressions for which the schedule is empty.
+    """
+
     minute: str = "*"
     hour: str = "*"
     dom: str = "*"
     month: str = "*"
     dow: str = "*"
     cron: CronStr = field(init=False)
+    upcoming: list[datetime] = field(init=False, default_factory=list)
     is_valid: bool = field(init=False, default=True)
+    error: str = field(init=False, default="")
 
     def __post_init__(self) -> None:
-        try:
-            self.cron = CronStr(str(self))
-        except (ValueError, ValidationError):
-            self.is_valid = False
+        self.validate()
 
     def __repr__(self) -> str:
         return f"{self.minute} {self.hour} {self.dom} {self.month} {self.dow}"
+
+    def validate(self) -> bool:
+        """Validate the current cron parts and find the upcoming runs.
+
+        Sets `is_valid`, `error`, and `upcoming`, and returns `is_valid`. The
+        `cron` attribute is only replaced by a valid expression.
+        """
+        self.upcoming = []
+        try:
+            cron = CronStr(str(self))
+        except (ValueError, ValidationError) as e:
+            self.is_valid, self.error = False, str(e)
+            return False
+
+        try:
+            self.upcoming = list(islice(cron.schedule(), UPCOMING_RUNS))
+        except Exception:
+            # cron_converter raises a bare Exception when it finds no run at all
+            self.upcoming = []
+
+        if not self.upcoming:
+            self.is_valid, self.error = False, "This expression never runs"
+            return False
+
+        self.cron = cron
+        self.is_valid, self.error = True, ""
+        return True
 
 
 class CronEditorDialog(ui.dialog):
@@ -148,7 +185,10 @@ class CronEditorDialog(ui.dialog):
         if self.model.is_valid:
             self.update_input_options()
         else:
-            ui.notify(f"Invalid cron expression: {cron}", type="negative")
+            ui.notify(
+                f"Invalid cron expression: {cron} ({self.model.error})",
+                type="negative",
+            )
 
     def update_input_options(self) -> None:
         """Add novel cron expression tokens to the options of the select components.
@@ -365,21 +405,23 @@ class CronEditorDialog(ui.dialog):
 
     def handle_cron_change(self, event: ValueChangeEventArguments) -> None:
         """Callback handler from cron expression selectors"""
-        try:
-            self.model.cron = CronStr(str(self.model))
-            self.model.is_valid = True
-            self.show_next_runs.refresh()
-        except (ValueError, ValidationError) as e:
-            self.model.is_valid = False
-            ui.notify(e, type="negative")
+        if not self.model.validate():
+            ui.notify(self.model.error, type="negative")
+        self.show_next_runs.refresh()
 
     @ui.refreshable_method
     def show_next_runs(self) -> None:
         """Refreshable method to display the next five events according to the
-        current cron schedule.
+        current cron schedule, or to say that there are none.
         """
+        if not self.model.is_valid:
+            ui.label("No upcoming runs for this expression").classes(
+                "text-sm text-gray-400",
+            )
+            return
+
         now = datetime.now(tz=UTC)
-        for i, run in enumerate(islice(self.model.cron.schedule(), 5)):
+        for i, run in enumerate(self.model.upcoming):
             until_run = run - now
             with ui.row().classes("w-full items-center"):
                 ui.label(str(i + 1)).classes(

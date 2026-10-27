@@ -1,4 +1,6 @@
 import asyncio
+import calendar
+import re
 
 import pytest
 from nicegui import ui
@@ -39,6 +41,27 @@ async def should_see_cron(user: User, expression: str) -> None:
     )
 
 
+def next_runs(user: User) -> list[str]:
+    """The upcoming runs the dialog currently shows, as the user reads them."""
+    try:
+        labels = user.find(kind=ui.label).elements
+    except AssertionError:
+        return []
+    return [
+        label.text
+        for label in labels
+        if re.fullmatch(r"\w{3}, \d{2}-\w{3} \d{4} at .*", label.text)
+    ]
+
+
+async def type_into(user: User, marker: str, text: str) -> None:
+    """Type text into a select and click away, as a user would."""
+    select = user.find(kind=ui.select, marker=marker)
+    select.trigger("focus")
+    select.trigger("inputValue", text)
+    select.trigger("blur")
+
+
 async def settle() -> None:
     """Give the dialog's bindings time to catch up with the last interaction.
 
@@ -47,6 +70,11 @@ async def settle() -> None:
     display would otherwise pass before a regression becomes visible.
     """
     await asyncio.sleep(0.5)
+
+
+def month_number(month: str) -> int:
+    """The cron number of a month name, as listed in the month select."""
+    return list(calendar.month_name).index(month)
 
 
 async def choose_option(user: User, marker: str, option: str, expression: str) -> None:
@@ -152,3 +180,77 @@ async def test_cron_editor_blur_without_typing_changes_nothing(user: User) -> No
     await settle()
 
     await should_see_cron(user, "* * * * *")
+
+
+@pytest.mark.parametrize(
+    ("day", "month"),
+    [("30", "February"), ("31", "April"), ("31", "June")],
+)
+async def test_cron_editor_rejects_a_date_that_never_happens(
+    user: User,
+    day: str,
+    month: str,
+) -> None:
+    """The dialog warns about and refuses expressions that can never run.
+
+    Day and month are separate selects, so a user can easily combine them into a
+    date that does not exist. No next runs can be found for such an expression.
+    """
+    await open_cron_editor(user)
+    await type_into(user, "dom", day)
+    await should_see_cron(user, f"* * {day} * *")
+    assert next_runs(user)
+
+    await choose_option(user, "month", month, f"* * {day} {month_number(month)} *")
+
+    await user.should_see("This expression never runs", retries=PATIENCE)
+    await user.should_see("No upcoming runs for this expression", retries=PATIENCE)
+    assert next_runs(user) == []
+    done = next(iter(user.find(kind=ui.button, marker="done").elements))
+    assert not done.enabled
+
+
+async def test_cron_editor_accepts_a_leap_day(user: User) -> None:
+    """February 29th exists in leap years, so the dialog accepts it."""
+    await open_cron_editor(user)
+    await type_into(user, "dom", "29")
+    await choose_option(user, "month", "February", "* * 29 2 *")
+    await settle()
+
+    assert len(next_runs(user)) == 5
+    assert all("29-Feb" in run for run in next_runs(user))
+    done = next(iter(user.find(kind=ui.button, marker="done").elements))
+    assert done.enabled
+
+
+async def test_cron_editor_clears_next_runs_for_an_invalid_expression(
+    user: User,
+) -> None:
+    """An invalid expression must not leave the previous expression's runs showing."""
+    await open_cron_editor(user)
+    await type_into(user, "dom", "12")
+    await should_see_cron(user, "* * 12 * *")
+    assert all("12-" in run for run in next_runs(user))
+    assert next_runs(user)
+
+    await type_into(user, "dom", "99")
+
+    await user.should_see("No upcoming runs for this expression", retries=PATIENCE)
+    assert next_runs(user) == []
+    done = next(iter(user.find(kind=ui.button, marker="done").elements))
+    assert not done.enabled
+
+
+async def test_cron_editor_recovers_after_an_invalid_expression(user: User) -> None:
+    """Fixing an invalid expression brings back the next runs and enables Done."""
+    await open_cron_editor(user)
+    await type_into(user, "dom", "99")
+    await user.should_see("No upcoming runs for this expression", retries=PATIENCE)
+
+    await type_into(user, "dom", "12")
+    await should_see_cron(user, "* * 12 * *")
+    await settle()
+
+    assert len(next_runs(user)) == 5
+    done = next(iter(user.find(kind=ui.button, marker="done").elements))
+    assert done.enabled
