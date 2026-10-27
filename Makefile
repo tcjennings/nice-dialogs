@@ -37,3 +37,11 @@ lint:
 .PHONY: typing
 typing:
 	uv run mypy -p nice_dialogs -p examples -p tests
+
+.PHONY: release-dry-run
+release-dry-run:
+	uv run semantic-release --noop version --no-commit --no-changelog
+
+.PHONY: release
+release:
+	uv run semantic-release version --no-commit --no-changelog
