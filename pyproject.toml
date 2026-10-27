@@ -2,6 +2,7 @@
 name = "nice-dialogs"
 description = "Package containing reusable general-purpose NiceGUI dialogs"
 license = "MIT"
+license-files = ["LICENSE"]
 readme = "README.md"
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -11,14 +12,14 @@ classifiers = [
     "Programming Language :: Python :: 3 :: Only",
     "Programming Language :: Python :: 3.13",
     "Programming Language :: Python :: 3.14",
-    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Topic :: Internet",
     "Typing :: Typed",
 ]
 requires-python = ">=3.13"
 dependencies = [
-    "nicegui >= 3.11, <4",
+    "nicegui >= 3.16, <4",
     "pydantic-extra-types[cron] >= 2.10.6",
 ]
 dynamic = ["version"]
