@@ -2,11 +2,14 @@ PY_VENV := .venv/
 UV_LOCKFILE := uv.lock
 BUILD_DIST := dist/
 
+# Use uv.lock as it is; only the lockfile target may change it.
+export UV_FROZEN := 1
+
 $(UV_LOCKFILE):
-	uv lock --build-isolation
+	env -u UV_FROZEN uv lock --build-isolation
 
 $(PY_VENV): $(UV_LOCKFILE)
-	uv sync --frozen
+	uv sync
 
 $(BUILD_DIST): $(PY_VENV)
 	uv build
@@ -43,7 +46,9 @@ release-dry-run:
 	uv run semantic-release --noop version --no-commit --no-changelog
 
 # On a maintenance branch (release/X.Y.x) only patch releases are allowed.
+# The tag is made as the git user, so GitHub can verify its signature.
 .PHONY: release
+release: export GIT_COMMIT_AUTHOR = $(shell git config user.name) <$(shell git config user.email)>
 release:
 	@branch=$$(git branch --show-current); \
 	next=$$(uv run semantic-release --noop version --no-commit --no-changelog --print 2>/dev/null | tail -n 1); \
