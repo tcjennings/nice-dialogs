@@ -6,6 +6,7 @@ name: CI
 
 env:
   UV_MANAGED_PYTHON: "1"
+  UV_FROZEN: "1"
 
 jobs:
   commitlint:
